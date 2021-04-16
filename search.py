@@ -494,7 +494,142 @@ class EightPuzzle(Problem):
 
 
 # ______________________________________________________________________________
+#Wolf Goaf Cabbage Farmer Problem (inherit from based class Problem
+class WolfGoatCabbage(Problem):
 
+    # Set the initial and goal states.
+    def __init__(self):
+        super().__init__(initial=('F', 'C', 'G', 'W'), goal=())
+
+    # Returns True if the given state is a goal state.
+    def goal_test(self, state):
+        return state == self.goal
+
+    # Given state and action ==> return a new state that is the result of the action.
+    # Action is assumed to be a valid action in the state
+    def result(self, state, action):
+
+        new_state = state
+    
+        if action == 'F':                                       # 00: Move only farmer
+            if 'F' in state:                                    # Farmer is on the left side
+                new_state = self.remove(new_state, 'F')
+            else:                                               # Farmer is on the right side
+                new_state = self.add(new_state, 'F')         
+
+        elif action == 'FC':                                    # 01: Move farmer & cabbage
+            if 'F' in state and 'C' in state:                   # Farmer & cabbage on the left side
+                new_state = self.remove2(new_state, 'F', 'C')
+            else:                                               # Farmer & cabbage on the right side
+                new_state = self.add2(new_state, 'F', 'C')
+        
+        elif action == 'FG':                                    # 02: Move farmer & goat
+            if 'F' in state and 'G' in state:                   # Farmer & goat on the left side
+                new_state = self.remove2(new_state, 'F', 'G')
+            else:                                               # Farmer & goat on the right side
+                new_state = self.add2(new_state, 'F', 'G')
+
+        elif action == 'FW':                                    # 03: Move farmer & wolf
+            if 'F' in state and 'W' in state:                   # Farmer & wolf on the left side
+                new_state = self.remove2(new_state, 'F', 'W')
+
+            else:                                               # Farmer & wolf on the right side
+                new_state = self.add2(new_state, 'F', 'W')
+            
+        return new_state
+
+    # Return the actions that can be executed in the given state.
+    def actions(self, state):
+
+        possible_actions = ['F', 'FC', 'FG', 'FW']
+
+        # Action 00: F only
+        new_state = state
+
+        if 'F' in new_state:                            # Farmer on left
+            new_state = self.remove(new_state, 'F')
+        else:                                           # Farmer on right
+            new_state = self.add(new_state, 'F')
+
+        # Check if moving farmer alone gets the cabbage or goat eaten.
+        if self.goat_eats_cabbage(new_state) or self.wolf_eats_goat(new_state):
+            possible_actions.remove('F')
+
+        # Action 01: FC
+        new_state = state
+
+        # Check if moving the Farmer and the Cabbage is even possible
+        if 'F' in new_state and 'C' in new_state:                       # Both on left
+            new_state = self.remove2(new_state, 'F', 'C')
+            
+            # Check if moving the farmer and the cabbage gets the goat eaten.
+            if self.wolf_eats_goat(new_state):
+                possible_actions.remove('FC')
+
+        elif not 'F' in new_state and not 'C' in new_state:             # Both on right
+            new_state = self.add2(new_state, 'F', 'C')
+
+            # Check if moving the farmer and the cabbage gets the goat eaten.
+            if self.wolf_eats_goat(new_state):
+                possible_actions.remove('FC')
+
+        else: # Farmer and cabbage not on the same side
+            possible_actions.remove('FC')
+        
+        # Action 02: FG
+        new_state = state
+
+        # Check if moving the Farmer and the goat is even possible.
+        if not (('F' in new_state and 'G' in new_state) or (not 'F' in new_state and not 'G' in new_state)):
+            possible_actions.remove('FG') # Farmer and Goat not on the same side
+    
+        # Action 03: FW
+        new_state = state
+
+        # Check if moving the Farmer and the wolf is even possible
+        if 'F' in new_state and 'W' in new_state:                       # Both on left
+            new_state = self.remove2(new_state, 'F', 'W')
+
+            # Check if moving the farmer and the wolf gets the cabbage eaten.
+            if self.goat_eats_cabbage(new_state):
+                possible_actions.remove('FW')
+
+        elif not 'F' in new_state and not 'W' in new_state:             # Both on right
+            new_state = self.add2(new_state, 'F', 'W')
+
+            # Check if moving the farmer and the wolf gets the cabbage eaten.
+            if self.goat_eats_cabbage(new_state):
+                possible_actions.remove('FW')
+
+        else: # Farmer and wolf not on the same side
+            possible_actions.remove('FW')
+
+        return possible_actions
+
+    # Helper functions
+    def goat_eats_cabbage(self, state):
+        return (('G' in state and 'C' in state) and not 'F' in state) or ('F' in state and (not 'G' in state and not 'C' in state))
+    def wolf_eats_goat(self, state):
+        return (('G' in state and 'W' in state) and not 'F' in state) or ('F' in state and (not 'G' in state and not 'W' in state))
+    def add(self, state, value):
+        state_list = list(state)
+        state_list.append(value)
+        return tuple(state_list) 
+    def remove(self, state, value):
+        state_list = list(state)
+        state_list.remove(value)
+        return tuple(state_list)
+    def add2(self, state, value00, value01):
+        state_list = list(state)
+        state_list.append(value00)
+        state_list.append(value01)
+        return tuple(state_list)   
+    def remove2(self, state, value00, value01):
+        state_list = list(state)
+        state_list.remove(value00)
+        state_list.remove(value01)
+        return tuple(state_list)
+# ______________________________________________________________________________
 
 class PlanRoute(Problem):
     """ The problem of moving the Hybrid Wumpus Agent from one place to other """
